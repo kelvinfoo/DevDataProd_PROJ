@@ -1,0 +1,80 @@
+---
+title: "Predicting Quake Impact"
+author: "Kelvin"
+date: "21 June 2015"
+runtime: shiny
+output: html_document
+---
+  
+## 1. Introduction
+This application uses the 'quakes' dataset and attempts predict the scale of a quake using different prediction models and other parameters
+  
+This application enables to user to perform a fast stimulation of 3 different prediction models when presented with different basic parameters.  
+  
+## 2. Available Prediction Models  
+  
+The 3 prediction models available are:  
+a. **gbm** *(gradient boosting model)*  
+b. **rf** *(random forest)*  
+c. **knn** *(k nearest neighbor)*
+These models can be easily selected using a drop-down selection textbox.  
+  
+``` {r echo=FALSE}
+selectInput("model", "Choose a prediction model:", 
+                    choices = c("gbm", "rf", "knn"))
+```
+  
+## 3. Basic Parameters  
+  
+The basic parameters that can be adjusted are:  
+a. **Training Data Size (in %)** *(between 50% to 90%, larger size may yield better accuracy but longer processing time)*  
+  
+``` {r echo=FALSE}
+sliderInput("trData", "Adjust training dataset size (in %)",
+                    min = 50, max = 90, step = 5, value = 70)
+```
+  
+b. **Cross-validation** *(number cross-validations to be performed, larger size may yield better accuracy but longer processing time)*  
+  
+``` {r echo=FALSE}
+radioButtons("cv", "Select number of Cross Validations to be performed:",
+                     c("3" = 3, "5" = 5, "10" = 10), inline=TRUE)
+```
+  
+## 4. Exploratory Data Analysis  
+The dataset used in this application comes from the default 'quakes' dataset. The dataset give locations of 1000 seismic events of magnitude greater than 4.0. The events occurred near Fiji since 1964.  
+  
+The variables in this dataset are:  
+[,1]    lat	numeric	Latitude of event  
+[,2]	long	numeric	Longitude  
+[,3]	depth	numeric	Depth (km)  
+[,4]	mag	numeric	Richter Magnitude  
+[,5]	stations	numeric	Number of stations reporting  
+  
+The magnitude readings are categorized according to standard seismic scales. See this [link](http://en.wikipedia.org/wiki/Richter_magnitude_scale) for reference. The categorized readings are stored in a new 'impact' column.   
+  
+``` {r eval=FALSE}  
+data(quakes)
+quakes$impact <- sapply(quakes$mag, function(x) if(x<=4.9) c("Light") else if(x<=5.9) c("Moderate") else c("Strong"))
+```
+  
+In order to reduce the processing time of the prediction models, only 30% of the 1000 observations will be used. Accuracy is dropped in favour of performance and objective of the application.  
+  
+``` {r eval=FALSE}  
+set.seed(7)
+shrink <- createDataPartition(y=as.factor(quakes$impact), p=0.3, list=F)
+quakes <- quakes[shrink,]
+```
+  
+## 5. Outputs  
+The application produces 3 outputs pertaining to the selected prediction model and parameters selected.  
+  
+### 5.1 Prediction Model information  
+The first information displayed is the details of the selected prediction model. Useful data such as accuracy on in-sample error, kappa, etc, can be found.  
+  
+### 5.2 Plot of Prediction Model  
+This graph shows the different number of iterations used by the prediction model and compare the most accurate iteration that will be selected.  
+  
+### 5.3 Confusion Matrix on Testing data partition  
+The matrix plot shows the percentage of actual vs predicted results when the prediction model is applied onto the testing data partition.  
+  
